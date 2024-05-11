@@ -5,8 +5,8 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import os 
 
-kld_loss = lambda mu, logvar :-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim = 1)
-recons_loss =lambda recon_x, x: F.mse_loss(recon_x, x)
+kld_loss = lambda mu, logvar :torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim = 1))
+recons_loss =lambda recon_x, x: F.mse_loss(recon_x, x, reduction='sum')
 
 DEVICE='cuda' if torch.cuda.is_available() else 'cpu'   # 设备
 
@@ -43,10 +43,7 @@ for epoch in range(EPOCH):
     model.train()
     train_loss = 0.
     train_num = len(train_loader.dataset)
-    
-    
-    
-    
+
     for idx, (x, _) in enumerate(train_loader):
         batch = x.size(0)
         x = x.to(DEVICE)
@@ -55,7 +52,6 @@ for epoch in range(EPOCH):
         kl = kld_loss(mu, logvar)
         
         # kl_loss need a weight
-        
         loss = recon + kl   
         train_loss += loss.item()
         loss = loss / batch

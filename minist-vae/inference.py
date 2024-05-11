@@ -1,37 +1,28 @@
-import numpy as np
-from scipy.stats import norm
-import matplot.pyplot as plt
-from vae import VAE
+# reference: https://github.com/AntixK/PyTorch-VAE/blob/master/models/vanilla_vae.py
 import torch
+from vae import VAE
 
-state = torch.load('best_model_mnist')
-model = VAE()
-model.load_state_dict(state)
+def sample(num_samples,latent_dim):
+    """
+    Samples from the latent space and return the corresponding
+    image space map.
+    :param num_samples: (Int) Number of samples
+    :return: (Tensor)
+    """
+    z = torch.randn(num_samples,
+                    latent_dim)
+    vae = VAE()
+    samples = vae.decoder(z)
+    return samples
 
+def generate(x):
+    """
+    Given an input image x, returns the reconstructed image
+    :param x: (Tensor) [B x C x H x W]
+    :return: (Tensor) [B x C x H x W]
+    """
+    vae = VAE()
+    return vae(x)
 
-n = 20
-digit_size = 28
-
-grid_x = norm.ppf(np.linspace(0.05, 0.95, n))
-grid_y = norm.ppf(np.linspace(0.05, 0.95, n))
-
-
-model.eval()
-figure = np.zeros((digit_size * n, digit_size * n))
-for i, yi in enumerate(grid_y):
-    for j, xi in enumerate(grid_x):
-        t = [xi, yi]
-        z_sampled = torch.FloatTensor(t)
-        with torch.no_grad():
-            decode = model.decoder(z_sampled)
-            digit = decode.view((digit_size, digit_size))
-            figure[
-                i * digit_size: (i + 1) * digit_size,
-                j * digit_size: (j + 1) * digit_size
-            ] = digit
-
-plt.figure(figsize=(10, 10))
-plt.imshow(figure, cmap="Greys_r")
-plt.xticks([])
-plt.yticks([])
-plt.axis('off')
+if __name__ == "__main__":
+    sample()
