@@ -31,9 +31,7 @@ iter_count=0
 for epoch in range(EPOCH):
     for imgs,labels in dataloader:
         logits=model(imgs.to(DEVICE))
-        
         loss=F.cross_entropy(logits,labels.to(DEVICE))
-        
         optimzer.zero_grad()
         loss.backward()
         optimzer.step()

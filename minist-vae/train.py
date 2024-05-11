@@ -5,13 +5,8 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import os 
 
-
-
-
-kl_loss = lambda mu, logvar: -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-recon_loss = lambda recon_x, x: F.binary_cross_entropy(recon_x, x, size_average=False)
-
-
+kld_loss = lambda mu, logvar :-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim = 1)
+recons_loss =lambda recon_x, x: F.mse_loss(recon_x, x)
 
 DEVICE='cuda' if torch.cuda.is_available() else 'cpu'   # 设备
 
@@ -56,10 +51,12 @@ for epoch in range(EPOCH):
         batch = x.size(0)
         x = x.to(DEVICE)
         recon_x, mu, logvar = model(x)
-        recon = recon_loss(recon_x, x)
-        kl = kl_loss(mu, logvar)
-
-        loss = recon + kl
+        recon = recons_loss(recon_x, x)
+        kl = kld_loss(mu, logvar)
+        
+        # kl_loss need a weight
+        
+        loss = recon + kl   
         train_loss += loss.item()
         loss = loss / batch
 
@@ -69,7 +66,7 @@ for epoch in range(EPOCH):
 
     
         if idx % 100 == 0:
-            print(f"Training loss {loss: .3f} \t Recon {recon / batch: .3f} \t KL {kl / batch: .3f} in Step {idx}")
+            print(f"Training loss {loss.detach(): .3f} \t Recon {recon.detach() / batch: .3f} \t KL {kl.detach() / batch: .3f} in Step {idx}")
 
     train_losses.append(train_loss / train_num)
     
@@ -83,8 +80,8 @@ for epoch in range(EPOCH):
         for idx, (x, _) in enumerate(test_loader):
             x = x.to(DEVICE)
             recon_x, mu, logvar = model(x)
-            recon = recon_loss(recon_x, x)
-            kl = kl_loss(mu, logvar)
+            recon = recons_loss(recon_x, x)
+            kl = kld_loss(mu, logvar)
             loss = recon + kl
             valid_loss += loss.item()
             valid_kl += kl.item()
