@@ -4,6 +4,15 @@ from vae import VAE
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import os 
+
+
+
+
+kl_loss = lambda mu, logvar: -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+recon_loss = lambda recon_x, x: F.binary_cross_entropy(recon_x, x, size_average=False)
+
+
+
 DEVICE='cuda' if torch.cuda.is_available() else 'cpu'   # 设备
 
 train_dataset=MNIST() 
